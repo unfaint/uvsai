@@ -3,7 +3,6 @@
     <p>Использована модель CheXNet (<a href="https://github.com/arnoweng/CheXNet">Pytorch реализация</a>), дообученная на датасетах <a href="http://openi.nlm.nih.gov/imgs/collections/NLM-MontgomeryCXRSet.zip">Montgomery County X-ray Set</a> и <a href="http://openi.nlm.nih.gov/imgs/collections/ChinaSet_AllFiles.zip">Shenzhen Hospital X-ray Set</a>.
     </p>
 <table border= 1>
-    
     <tr>
         <td></td>
         <td>Правильных ответов</td>
@@ -25,7 +24,7 @@
     </tr>
     <tr>
         <td>
-            <a style="font-size:50pt" href="{% if (vardict.laquo > 0) %}{{ vardict.laquo }}{% endif %}">&laquo;</a>
+            <a style="font-size:50pt" href="{{ vardict.laquo }}">&laquo;</a>
         </td>
         {% if vardict.image_answer == 3 %}
         <td align="center">Признаки туберкулеза
@@ -42,7 +41,7 @@
         </td>
         {% endif %}
         <td>
-            <a style="font-size:50pt" href="{% if (vardict.raquo < vardict.total_num_of_imgs) %}{{ vardict.raquo }}{% endif %}">&raquo;</a>
+            <a style="font-size:50pt" href="{{ vardict.raquo }}">&raquo;</a>
         </td>
     </tr>
 </table>
