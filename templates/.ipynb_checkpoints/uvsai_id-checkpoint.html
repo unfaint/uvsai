@@ -1,0 +1,50 @@
+<center>
+<div>
+    <p>Использована модель CheXNet (<a href="https://github.com/arnoweng/CheXNet">Pytorch реализация</a>), дообученная на датасетах <a href="http://openi.nlm.nih.gov/imgs/collections/NLM-MontgomeryCXRSet.zip">Montgomery County X-ray Set</a> и <a href="http://openi.nlm.nih.gov/imgs/collections/ChinaSet_AllFiles.zip">Shenzhen Hospital X-ray Set</a>.
+    </p>
+<table border= 1>
+    
+    <tr>
+        <td></td>
+        <td>Правильных ответов</td>
+        <td>Точность (доля верных)</td>
+    </tr>
+    {% for key1,item1 in result.items() %}
+    <tr>
+        <td>{{ item1.player }}</td>
+        <td>{{ item1.ca }}</td>
+        <td>{{ item1.acc|round(1, 'floor') }} %</td>
+    </tr>
+    {% endfor %}
+</table>
+<table border=0>
+    <tr>
+        <td colspan=3>
+            <img src= "{{url_for('static', filename=vardict.image_path)}}" width="512" height="512" />
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a style="font-size:50pt" href="{% if (vardict.laquo > 0) %}{{ vardict.laquo }}{% endif %}">&laquo;</a>
+        </td>
+        {% if vardict.image_answer == 3 %}
+        <td align="center">Признаки туберкулеза
+            <form action= "{{ vardict.img_id }}" method="post"><input type="hidden" name="answer" value="3" />
+                <button onclick="document.forms[0].elements.answer.value = 1">Присутствуют</button>
+                <button onclick="document.forms[0].elements.answer.value = 0">Отсутствуют</button>
+            </form>
+        </td>
+        {% else %}
+        <td align="center">
+            <div>Ваш ответ: {{ vardict.image_answer_u }} </div>
+            <div>Ответ ИИ: {{ vardict.image_answer_ai }} </div>
+            <div>Правильный ответ: {{ vardict.image_answer_gt }} </div>
+        </td>
+        {% endif %}
+        <td>
+            <a style="font-size:50pt" href="{% if (vardict.raquo < vardict.total_num_of_imgs) %}{{ vardict.raquo }}{% endif %}">&raquo;</a>
+        </td>
+    </tr>
+</table>
+</div>
+</center>
