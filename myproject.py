@@ -12,7 +12,7 @@ from torch.autograd import Variable
 import redis
 
 import flask
-from flask import request
+from flask import request, redirect
 
 class DenseNet121(nn.Module):
     def __init__(self, out_size):
@@ -30,6 +30,7 @@ class DenseNet121(nn.Module):
 
 app = flask.Flask(__name__)
 model = None
+email = None
 file_list = []
 answers = []
 lng = 'ru'
@@ -61,7 +62,7 @@ def generate_file_list():
     #    file_list.extend(filenames)
     #    break
     
-    file_list = pd.read_csv('file_list.csv').values
+    file_list = pd.read_csv('file_list.csv', header= None).values
     file_list = np.random.permutation(file_list)
     answers = [3] * len(file_list)
 
@@ -79,6 +80,30 @@ def uvsai():
 def uvsai_id(img_id):
     #global trans
     #global lng
+    global email
+    
+    if request.method == 'POST':
+        if request.form.get('email') != None:
+            email = request.form.get('email')
+            
+            # новая сессия
+            if r.hget(email, 'session') == None: 
+                
+                # создаем запись о сессии
+                r.hset(email, 'session', time.time())
+                
+                # генерируем и сохраняем список изображений
+                generate_file_list()
+                r.rpush(email+':image_path', file_list[:,0])
+                r.rpush(email+':image_gt', file_list[:,1])
+                r.rpush(email+':image_pred', file_list[:,2])
+                r.rpush(email+':answers', answers)
+            
+            # продолжение сессии
+            else: 
+                image_list[:,0] = r.lrange(email+':image_path', 0, -1)
+                image_list[:,1] = r.lrange(email+':image_gt', 0, -1)
+                image_list[:,2] = r.lrange(email+':image_pred', 0, -1)
     
     image_path = file_list[img_id][0]
     image_gt = file_list[img_id][1]
@@ -95,13 +120,7 @@ def uvsai_id(img_id):
         'image_pred':image_pred,
     }
     
-    if request.method == 'POST':
-        #print(request.form.get('answer'))
-        if request.form.get('email') != None:
-            email = request.form.get('email')
-            r.hset(email, 'session', time.time())
-            r.hset(email+':image_path')
-        
+    if request.method == 'POST': 
         if request.form.get('answer') in ('0','1'):
             if (answers[img_id] == 3):
                 r.hincrby('u', 'atotal', 1)
@@ -181,5 +200,6 @@ if __name__ == "__main__":
     #print('Model loaded!')
     generate_file_list()
     #print(len(file_list))
-    app.run()
-    #app.run(host='0.0.0.0')
+    port = int(os.environ.get('PORT', 5000))
+    app.run(port=port)
+    #app.run(host='0.0.0.0', port=port)
