@@ -111,9 +111,11 @@ def uvsai_id(img_id):
             
             # продолжение сессии
             else: 
+                generate_file_list()
                 file_list[:,0] = r.lrange(email+':image_path', 0, -1)
                 file_list[:,1] = r.lrange(email+':image_gt', 0, -1)
                 file_list[:,2] = r.lrange(email+':image_pred', 0, -1)
+                print(file_list[0])
                 answers = r.lrange(email+':answers', 0, -1)
     
     #print(email)
@@ -219,5 +221,5 @@ if __name__ == "__main__":
     #generate_file_list()
     #print(len(file_list))
     port = int(os.environ.get('PORT', 5000))
-    app.run(port=port)
-    #app.run(host='0.0.0.0', port=port)
+    #app.run(port=port)
+    app.run(host='0.0.0.0', port=port)
