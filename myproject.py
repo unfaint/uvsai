@@ -37,7 +37,7 @@ answers = []
 lng = 'ru'
 trans = {
     'ru':{
-        'rignt_answer':'верно',
+        'right_answer':'верно',
         'wrong_answer':'неверно',
         'answer':{
             0:'признаки отсутствуют',
@@ -115,7 +115,6 @@ def uvsai_id(img_id):
                 file_list[:,0] = r.lrange(email+':image_path', 0, -1)
                 file_list[:,1] = r.lrange(email+':image_gt', 0, -1)
                 file_list[:,2] = r.lrange(email+':image_pred', 0, -1)
-                print(file_list[0])
                 answers = r.lrange(email+':answers', 0, -1)
     
     #print(email)
@@ -148,9 +147,10 @@ def uvsai_id(img_id):
                 r.lset(email+':answers', img_id, int(request.form.get('answer')))
             else:
                 pass
-    
-    vardict['image_answer_u'] = trans[lng]['answer'][int(answers[img_id])]
-    vardict['image_answer_ai'] = trans[lng]['answer'][int(image_pred)]
+    #vardict['image_answer_u'] = trans[lng]['answer'][int(answers[img_id])]
+    #vardict['image_answer_ai'] = trans[lng]['answer'][int(image_pred)]
+    vardict['image_answer_u'] = trans[lng]['right_answer'] if int(answers[img_id]) == int(image_gt) else trans[lng]['wrong_answer']
+    vardict['image_answer_ai'] = trans[lng]['right_answer'] if int(image_pred) == int(image_gt) else trans[lng]['wrong_answer']
     vardict['image_answer_gt'] = trans[lng]['answer'][int(image_gt)]
     vardict['image_answer'] = int(answers[img_id])
     vardict['total_num_of_imgs'] = len(file_list)
@@ -163,6 +163,7 @@ def uvsai_id(img_id):
     for key in result.keys():
         val = r.hgetall(email)
         result[key]['ca'] = int(val[key+'_ca'])
+        result[key]['atotal'] = int(val[key+'_atotal'])
         result[key]['acc'] = float(int(val[key+'_ca']) / int(val[key+'_atotal']) if int(val[key+'_atotal']) > 0 else 0) * 100
         
         # !!!КОСТЫЛЬ!!!
@@ -221,5 +222,5 @@ if __name__ == "__main__":
     #generate_file_list()
     #print(len(file_list))
     port = int(os.environ.get('PORT', 5000))
-    #app.run(port=port)
-    app.run(host='0.0.0.0', port=port)
+    app.run(port=port)
+    #app.run(host='0.0.0.0', port=port, threaded=True)

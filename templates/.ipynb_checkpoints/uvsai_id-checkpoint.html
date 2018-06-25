@@ -1,16 +1,63 @@
+<head>
+    <style type="text/css">
+        body {
+            background-color: #84a4cf;
+            font-size: 120%;
+            font-family: Verdana, Arial, Helvetica, sans-serif;
+            color: #343453;
+            padding: 10px 10% 0 10%;
+        }
+        
+        img {
+            border-width: 2px;
+            border-style: solid;
+            border-color: #92b1dc;
+        }
+        
+        td {
+            text-align: center;
+            margin: 0px;
+        }
+        
+        table:result {
+            border-style: solid;
+            border-width: 2px;
+            border-color: #627a9a;
+            background-color: #92b1dc;
+        }
+        
+        td.quo {
+            background-color: #92b1dc;
+        }
+        
+        td.quo:hover {
+            background-color: #627a9a;
+        }
+        
+        td.quo a {
+            padding: 200px 10px 200px 10px;
+            text-decoration: none !important;
+            font-size: 400%;
+            color: #343453;
+        }
+    </style>
+</head>
+<body>
 <center>
-<div>
-    <p>Использована модель CheXNet (<a href="https://github.com/arnoweng/CheXNet">Pytorch реализация</a>), дообученная на датасетах <a href="http://openi.nlm.nih.gov/imgs/collections/NLM-MontgomeryCXRSet.zip">Montgomery County X-ray Set</a> и <a href="http://openi.nlm.nih.gov/imgs/collections/ChinaSet_AllFiles.zip">Shenzhen Hospital X-ray Set</a>.
+<div class="desc">
+    <p>Использована модель CheXNet (<a href="https://github.com/arnoweng/CheXNet">Pytorch реализация</a>), дообученная на <a href="https://ceb.nlm.nih.gov/repositories/tuberculosis-chest-x-ray-image-data-sets/">датасетах</a> рентгенограмм.
     </p>
-<table border= 1>
+<table border="0" class="result">
     <tr>
         <td></td>
-        <td>Правильных ответов</td>
-        <td>Точность (доля верных)</td>
+        <td>Всего</td>
+        <td>Верных</td>
+        <td>Доля</td>
     </tr>
     {% for key1,item1 in result.items() %}
     <tr>
         <td>{{ item1.player }}</td>
+        <td>{{ item1.atotal }}</td>
         <td>{{ item1.ca }}</td>
         <td>{{ item1.acc|round(1, 'floor') }} %</td>
     </tr>
@@ -18,32 +65,32 @@
 </table>
 <table border=0>
     <tr>
-        <td colspan=3>
+        <td class="quo">
+            <a class="quo" href="{{ vardict.laquo }}">&laquo;</a>
+        </td>
+        <td>
             <img src= "{{url_for('static', filename=vardict.image_path)}}" width="512" height="512" />
+        </td>
+        <td class="quo">
+            <a class="quo" href="{{ vardict.raquo }}">&raquo;</a>
         </td>
     </tr>
     <tr>
-        <td>
-            <a style="font-size:50pt" href="{{ vardict.laquo }}">&laquo;</a>
-        </td>
+        <td colspan="3" align="center">
         {% if vardict.image_answer == 3 %}
-        <td align="center">Признаки туберкулеза
+        Признаки туберкулеза
             <form action= "{{ vardict.img_id }}" method="post"><input type="hidden" name="answer" value="3" />
                 <button onclick="document.forms[0].elements.answer.value = 1">Присутствуют</button>
                 <button onclick="document.forms[0].elements.answer.value = 0">Отсутствуют</button>
             </form>
-        </td>
         {% else %}
-        <td align="center">
-            <div>Ваш ответ: {{ vardict.image_answer_u }} </div>
-            <div>Ответ ИИ: {{ vardict.image_answer_ai }} </div>
             <div>Правильный ответ: {{ vardict.image_answer_gt }} </div>
-        </td>
+            <div>Вы ответили {{ vardict.image_answer_u }} </div>
+            <div>ИИ ответил {{ vardict.image_answer_ai }} </div>
         {% endif %}
-        <td>
-            <a style="font-size:50pt" href="{{ vardict.raquo }}">&raquo;</a>
         </td>
     </tr>
 </table>
 </div>
 </center>
+</body>
