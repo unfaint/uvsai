@@ -1,11 +1,51 @@
+<html>
 <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <style type="text/css">
         body {
-            background-color: #84a4cf;
-            font-size: 120%;
+            background-color: #bdd4f2;
             font-family: Verdana, Arial, Helvetica, sans-serif;
             color: #343453;
             padding: 10px 10% 0 10%;
+        }
+        
+        h1 {
+            color: #b04c24;
+        }
+        
+        td {
+            text-align: center;
+            margin: 0px;
+        }
+        
+        table.result {
+            border-collapse: collapse;
+            border: 1px solid #6d87ab;
+            background-color: #c1d8f7;
+        }
+
+        table.result th, table.result td {
+            padding: 5px;
+            border: 1px solid #6d87ab;
+        }
+        
+        table.result th {
+            text-align: center;
+        }
+        
+        table.xray {
+            margin: 20px 0;
+        }
+        
+        table.xray form {
+            margin: 20px 0;
+        }
+        
+        div.img_result {
+            margin: 20px 0;
+            font-size: 110%;
         }
         
         img {
@@ -14,45 +54,53 @@
             border-color: #92b1dc;
         }
         
-        td {
-            text-align: center;
-            margin: 0px;
-        }
-        
-        table:result {
-            border-style: solid;
-            border-width: 2px;
-            border-color: #627a9a;
-            background-color: #92b1dc;
-        }
-        
         td.quo {
-            background-color: #92b1dc;
+            background-color: #c1d8f7;
         }
         
         td.quo:hover {
-            background-color: #627a9a;
+            background-color: #afc4e0;
         }
         
         td.quo a {
-            padding: 200px 10px 200px 10px;
+            padding: 200px 10px;
             text-decoration: none !important;
             font-size: 400%;
             color: #343453;
+        }
+        
+        button {
+            background-color: #b04c24;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 130%;
+        }
+        
+        button:hover {
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 <center>
-<div class="desc">
-    <p>Использована модель CheXNet (<a href="https://github.com/arnoweng/CheXNet">Pytorch реализация</a>), дообученная на <a href="https://ceb.nlm.nih.gov/repositories/tuberculosis-chest-x-ray-image-data-sets/">датасетах</a> рентгенограмм.
-    </p>
+    <h1>You vs. AI</h1>
+
 <table border="0" class="result">
+    <th colspan="7">
+        Результаты
+    </th>
     <tr>
         <td></td>
         <td>Всего</td>
         <td>Верных</td>
-        <td>Доля</td>
+        <td>ACC</td>
+        <td>PRE</td>
+        <td>REC</td>
+        <td>F1</td>
     </tr>
     {% for key1,item1 in result.items() %}
     <tr>
@@ -60,10 +108,13 @@
         <td>{{ item1.atotal }}</td>
         <td>{{ item1.ca }}</td>
         <td>{{ item1.acc|round(1, 'floor') }} %</td>
+        <td>{{ item1.pre|round(1, 'floor') }}</td>
+        <td>{{ item1.rec|round(1, 'floor') }}</td>
+        <td>{{ item1.f1|round(1, 'floor') }}</td>
     </tr>
     {% endfor %}
 </table>
-<table border=0>
+<table class="xray" border=0>
     <tr>
         <td class="quo">
             <a class="quo" href="{{ vardict.laquo }}">&laquo;</a>
@@ -78,19 +129,24 @@
     <tr>
         <td colspan="3" align="center">
         {% if vardict.image_answer == 3 %}
-        Признаки туберкулеза
             <form action= "{{ vardict.img_id }}" method="post"><input type="hidden" name="answer" value="3" />
-                <button onclick="document.forms[0].elements.answer.value = 1">Присутствуют</button>
-                <button onclick="document.forms[0].elements.answer.value = 0">Отсутствуют</button>
+                <button onclick="document.forms[0].elements.answer.value = 1">ЕСТЬ признаки туберкулеза</button>
+                <button onclick="document.forms[0].elements.answer.value = 0">НЕТ признаков туберкулеза</button>
             </form>
         {% else %}
-            <div>Правильный ответ: {{ vardict.image_answer_gt }} </div>
-            <div>Вы ответили {{ vardict.image_answer_u }} </div>
-            <div>ИИ ответил {{ vardict.image_answer_ai }} </div>
+            <div class="img_result">
+                <div>Правильный ответ: {{ vardict.image_answer_gt }} </div>
+                <div>Вы ответили <b>{{ vardict.image_answer_u }}</b> </div>
+                <div>ИИ ответил {{ vardict.image_answer_ai }} </div>
+            </div>
         {% endif %}
         </td>
     </tr>
 </table>
+    <div class="desc">
+    <p>Использована модель <a href="https://github.com/arnoweng/CheXNet">CheXNet</a>, дообученная на <a href="https://ceb.nlm.nih.gov/repositories/tuberculosis-chest-x-ray-image-data-sets/">датасетах</a> рентгенограмм.
+    </p>
 </div>
 </center>
 </body>
+</html>

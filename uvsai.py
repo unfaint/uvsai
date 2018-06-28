@@ -13,7 +13,7 @@ from torch.autograd import Variable
 import redis
 
 import flask
-from flask import request, redirect, url_for
+from flask import request, redirect, url_for, session
 
 class DenseNet121(nn.Module):
     def __init__(self, out_size):
@@ -88,10 +88,12 @@ def uvsai_id(img_id):
     if request.method == 'POST':
         if request.form.get('email') != None:
             email = request.form.get('email')
+            #создаем сессию flask
+            session['email'] = email
             
             # новая сессия
             if r.hget(email, 'session') == None: 
-                
+
                 # создаем запись о сессии
                 r.rpush('players', email)
                 r.hset(email, 'session', time.time())
@@ -111,19 +113,29 @@ def uvsai_id(img_id):
             
             # продолжение сессии
             else: 
-                generate_file_list()
+                file_list = np.array(['MCUCXR_0055_0.png',1,2]* 80).reshape(80,3)
                 file_list[:,0] = r.lrange(email+':image_path', 0, -1)
                 file_list[:,1] = r.lrange(email+':image_gt', 0, -1)
                 file_list[:,2] = r.lrange(email+':image_pred', 0, -1)
                 answers = r.lrange(email+':answers', 0, -1)
-    
-    #print(email)
-    if (email == None) | (img_id not in set(range(len(file_list)))):
+
+    if (session.get('email') == None) | (img_id not in set(range(len(file_list)))):
         return(redirect(url_for('uvsai'), code=302))
-        
-    image_path = file_list[img_id][0]
-    image_gt = file_list[img_id][1]
-    image_pred = file_list[img_id][2]
+    else:
+        email = session.get('email')
+        file_list = np.array(['MCUCXR_0055_0.png',1,2]* 80).reshape(80,3)
+        #print(file_list)
+        file_list[:,0] = r.lrange(email+':image_path', 0, -1)
+        file_list[:,1] = r.lrange(email+':image_gt', 0, -1)
+        file_list[:,2] = r.lrange(email+':image_pred', 0, -1)
+        answers = r.lrange(email+':answers', 0, -1)
+
+    print(email)
+    
+    #print(file_list)
+    image_path = file_list[img_id,0]
+    image_gt = int(file_list[img_id,1])
+    image_pred = int(file_list[img_id,2])
     laquo = img_id - 1 if img_id > 0 else img_id
     raquo = img_id + 1 if img_id < (len(file_list) - 1) else img_id
     
@@ -138,7 +150,9 @@ def uvsai_id(img_id):
     
     if request.method == 'POST': 
         if request.form.get('answer') in ('0','1'):
+            print(request.form.get('answer'), image_gt)
             if (int(answers[img_id]) == 3):
+                print('Correct answer?',int(image_gt == int(request.form.get('answer'))))
                 r.hincrby(email, 'u_atotal', 1)
                 r.hincrby(email, 'ai_atotal', 1)
                 r.hincrby(email, 'u_ca', int(image_gt == int(request.form.get('answer'))))
@@ -149,12 +163,41 @@ def uvsai_id(img_id):
                 pass
     #vardict['image_answer_u'] = trans[lng]['answer'][int(answers[img_id])]
     #vardict['image_answer_ai'] = trans[lng]['answer'][int(image_pred)]
+    
     vardict['image_answer_u'] = trans[lng]['right_answer'] if int(answers[img_id]) == int(image_gt) else trans[lng]['wrong_answer']
     vardict['image_answer_ai'] = trans[lng]['right_answer'] if int(image_pred) == int(image_gt) else trans[lng]['wrong_answer']
     vardict['image_answer_gt'] = trans[lng]['answer'][int(image_gt)]
     vardict['image_answer'] = int(answers[img_id])
     vardict['total_num_of_imgs'] = len(file_list)
     #print(vardict)
+    
+    print(sum([int(int(r.lrange(email+':answers', 0, -1)[i]) == file_list[i,1]) for i in range(len(file_list))]))
+    
+    PRE = {}
+    REC = {}
+    F1 = {}
+    
+    TP = sum([int(int(r.lrange(email+':answers', 0, -1)[i]) == int(int(r.lrange(email+':image_gt', 0, -1)[i])) == 1) for i in range(len(file_list))])
+    FP = sum([int((int(r.lrange(email+':answers', 0, -1)[i]) == 1) & (int(r.lrange(email+':image_gt', 0, -1)[i]) == 0)) for i in range(len(file_list))])
+    FN = sum([int((int(r.lrange(email+':answers', 0, -1)[i]) == 0) & (int(r.lrange(email+':image_gt', 0, -1)[i]) == 1)) for i in range(len(file_list))])
+    precision = float(TP / (TP + FP)) if (TP + FP) > 0 else .0
+    recall = float(TP / (TP + FN)) if (TP + FN) > 0 else .0
+    f1 = float(2*(precision * recall)/(precision + recall)) if (precision + recall) > 0 else .0
+    
+    PRE['u'] = precision
+    REC['u'] = recall
+    F1['u'] = f1
+    
+    TP = sum([int((int(r.lrange(email+':answers', 0, -1)[i]) < 3) & int(r.lrange(email+':image_pred', 0, -1)[i]) == int(int(r.lrange(email+':image_gt', 0, -1)[i])) == 1) for i in range(len(file_list))])
+    FP = sum([int((int(r.lrange(email+':answers', 0, -1)[i]) < 3) & (int(r.lrange(email+':image_pred', 0, -1)[i]) == 1) & (int(r.lrange(email+':image_gt', 0, -1)[i]) == 0)) for i in range(len(file_list))])
+    FN = sum([int((int(r.lrange(email+':answers', 0, -1)[i]) < 3) & (int(r.lrange(email+':image_pred', 0, -1)[i]) == 0) & (int(r.lrange(email+':image_gt', 0, -1)[i]) == 1)) for i in range(len(file_list))])
+    precision = float(TP / (TP + FP)) if (TP + FP) > 0 else .0
+    recall = float(TP / (TP + FN)) if (TP + FN) > 0 else .0
+    f1 = float(2*(precision * recall)/(precision + recall)) if (precision + recall) > 0 else .0
+    
+    PRE['ai'] = precision
+    REC['ai'] = recall
+    F1['ai'] = f1
     
     result = {
         'u':{'player':'Вы'},
@@ -165,6 +208,9 @@ def uvsai_id(img_id):
         result[key]['ca'] = int(val[key+'_ca'])
         result[key]['atotal'] = int(val[key+'_atotal'])
         result[key]['acc'] = float(int(val[key+'_ca']) / int(val[key+'_atotal']) if int(val[key+'_atotal']) > 0 else 0) * 100
+        result[key]['pre'] = PRE[key]
+        result[key]['rec'] = REC[key]
+        result[key]['f1'] = F1[key]
         
         # !!!КОСТЫЛЬ!!!
         result[key]['atime'] = int(0)
@@ -216,11 +262,12 @@ def predict():
     return flask.jsonify(data)
 
 if __name__ == "__main__":
+    app.secret_key = 'uvsai'
     #print('Loading CheXNet model...')
     #load_model()
     #print('Model loaded!')
     #generate_file_list()
     #print(len(file_list))
     port = int(os.environ.get('PORT', 5000))
-    app.run(port=port)
-    #app.run(host='0.0.0.0', port=port, threaded=True)
+    #app.run(port=port)
+    app.run(host='0.0.0.0', port=port, threaded=True)
