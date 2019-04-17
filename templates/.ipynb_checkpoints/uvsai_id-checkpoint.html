@@ -120,7 +120,11 @@
             <a class="quo" href="{{ vardict.laquo }}">&laquo;</a>
         </td>
         <td>
-            <img src= "{{url_for('static', filename=vardict.image_path)}}" width="512" height="512" />
+            {% if vardict.image_answer == 3 %}
+                <img src= "{{url_for('static', filename=vardict.image_path)}}" width="512" height="512" />
+            {% else %}
+                <img src= "/static/heatmap/resized/{{ vardict.image_path }}" width="512" height="512" />
+            {% endif %}
         </td>
         <td class="quo">
             <a class="quo" href="{{ vardict.raquo }}">&raquo;</a>
@@ -144,7 +148,7 @@
     </tr>
 </table>
     <div class="desc">
-    <p>Использована модель <a href="https://github.com/arnoweng/CheXNet">CheXNet</a>, дообученная на <a href="https://ceb.nlm.nih.gov/repositories/tuberculosis-chest-x-ray-image-data-sets/">датасетах</a> рентгенограмм.
+    <p>Использована модель <a href="https://github.com/arnoweng/CheXNet" target="blank">CheXNet</a>, дообученная на <a href="https://ceb.nlm.nih.gov/repositories/tuberculosis-chest-x-ray-image-data-sets/" target="blank">датасетах</a> рентгенограмм.
     </p>
 </div>
 </center>

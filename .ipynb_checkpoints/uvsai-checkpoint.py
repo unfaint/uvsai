@@ -13,7 +13,8 @@ from torch.autograd import Variable
 import redis
 
 import flask
-from flask import request, redirect, url_for, session
+from flask import flash, request, redirect, url_for, session
+from werkzeug.utils import secure_filename
 
 class DenseNet121(nn.Module):
     def __init__(self, out_size):
@@ -67,10 +68,46 @@ def generate_file_list():
     file_list = np.random.permutation(file_list)
     answers = [3] * len(file_list)
 
+UPLOAD_FOLDER = '/home/kruglov/projects/chestxray-nihcc/web-app/upload/'
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'zip', 'rar', '7z'])
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route("/check/")
 def check():
     return (
         '<form enctype="multipart/form-data" action="predict" method="post"><input type="file" name="image" /><input type="submit"  /></form>')
+
+@app.route("/xrupload/", methods= ['POST', 'GET'])
+def xrupload():
+    success = ''
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            print('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            print('No selected file')
+            return redirect(request.url)
+        if file:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(UPLOAD_FOLDER, filename))
+            success = '<p>File successfully uploaded!</p>'
+    return '''
+    <!doctype html>
+    <title>Upload new File</title>
+    <h1>Upload new File</h1>
+    '''+success+'''
+    <form method=post enctype=multipart/form-data>
+      <input type=file name=file>
+      <input type=submit value=Upload>
+    </form>
+    '''
 
 @app.route("/uvsai/", methods= ['POST', 'GET'])
 def uvsai():
@@ -86,7 +123,7 @@ def uvsai_id(img_id):
     global answers
     
     if request.method == 'POST':
-        if request.form.get('email') != None:
+        if (request.form.get('email') != None) & (request.form.get('email') != ''):
             email = request.form.get('email')
             #создаем сессию flask
             session['email'] = email
